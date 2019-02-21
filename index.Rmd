@@ -1,0 +1,193 @@
+<center><img src="http://i.imgur.com/sSaOozN.png" width="500"></center>
+
+## Course: Visual Analytics for Policy and Management
+
+### Joshua Jenkins
+
+_____
+<a id='part1'></a>
+
+# Bivariate Exercies 
+
+```{r}
+link="https://github.com/EvansDataScience/data/raw/master/crime.RData"
+load(file = url(link))
+```
+
+### Exercise 1
+
+```{r}
+(CrimeTotal=table(crime$crimecat,crime$Occurred.DayTime))
+```
+```{r}
+library(magrittr)
+CrimeCol=table(crime$crimecat,crime$Occurred.DayTime)%>%
+         prop.table(margin = 2)%>%   # 2 is % by column
+         "*"(100)%>%
+         round(3)
+
+CrimeCol
+```
+
+```{r}
+library(ggplot2)
+```
+
+
+```{r}
+df.C=as.data.frame(CrimeCol)
+```
+
+```{r}
+colnames(df.C)=c('Crime','Daytime','Percent')
+```
+
+```{r orderFacet, eval=TRUE}
+base  = ggplot(df.C, aes(x = reorder(Crime,Percent), y = Percent))
+lolliplot1 = base + geom_segment(aes(y=0, 
+                                     x = reorder(Crime,Percent), 
+                                     yend = Percent,
+                                     xend = Crime))
+lolliplot2 = lolliplot1 + facet_wrap( ~ Daytime ,nrow = 1) 
+lolliplot3 = lolliplot2 + geom_point()
+lolliplot3 + coord_flip() + theme(axis.text.y = element_text(size=4,angle = 45))
+```
+
+
+### Exercise 2
+
+```{r}
+base  = ggplot(df.C, aes(x = Daytime, y = reorder(Crime, -Percent), fill = Percent)) 
+```
+
+```{r}
+heat1 = base +  geom_tile() 
+```
+
+```{r}
+heat1 = base +  geom_tile() 
+heat2 = heat1 +scale_fill_gradient(low = "yellow", 
+                                   high = "purple")
+heat3 = heat2 + theme_classic() 
+
+heat4 = heat3 + theme(axis.text.x = element_text(angle = 90, vjust = 0.6), 
+                      legend.title = element_blank(), 
+                      legend.position="top", 
+                      legend.direction="horizontal",
+                      legend.key.width=unit(1, "cm"),
+                      legend.key.height=unit(1, "cm")) 
+
+heat4 + labs(y="Crime")
+```
+
+### Exercise 3
+
+```{r}
+boxplot(DaysToReport~Precinct,data=crime,
+        subset = DaysToReport>1)
+```
+
+```{r}
+crimeYear=crime[crime$DaysToReport>=365,]
+crimeY2000=crime[(crime$DaysToReport>=365) & (crime$year>=2000),]
+crimeY2000$YearsToReport=crimeY2000$DaysToReport/365
+crimeYearGG=crimeY2000[complete.cases(crimeY2000$YearsToReport),]
+```
+
+```{r}
+crimeWeek=crime[(crime$DaysToReport<365) & (crime$year>=2000),]
+
+crimeWeek$WeeksToReport=crimeWeek$DaysToReport/7
+
+crimeYearGG2=crimeWeek[complete.cases(crimeWeek$WeeksToReport) &complete.cases(crimeWeek$crimecat),]
+```
+
+```{r}
+base  = ggplot(crimeYearGG,aes(x=factor(year), y=YearsToReport))
+mins = base + stat_summary(fun.y=min, # function for 'y' is min()
+                           geom="line",
+                           show.legend = T,size=1,
+                           aes(group=1,col='Min'))
+mins1 = mins + ggtitle(label ="How Many Years Does it Take to Report a Crime?") + labs(caption = "Seattle Open Data Portal")
+mins2 = mins1 + theme(plot.caption = element_text(hjust = 0))
+mins2
+```
+
+
+```{r}
+minsMaxs= mins2 + stat_summary(fun.y=max,
+                              geom="line",
+                              linetype='dashed',
+                              size=1,show.legend = F,
+                              aes(group=1,col='Max'))
+
+minsMaxs
+```
+
+
+
+```{r}
+minsMaxsMd= minsMaxs + stat_summary(fun.y=median,
+                                    geom="line",size=2,
+                                    aes(group=1,col='Median'))
+minsMaxsMd 
+```
+
+
+### Exercise 4 
+
+```{r}
+daysByNeigh=tapply(crime$DaysToReport, crime$Neighborhood, mean,na.rm=T)
+```
+
+```{r}
+crimesByNeigh=tapply(crime$crimecat, crime$Neighborhood, length)%>%      
+                     prop.table()%>%
+                     "*"(100)%>% 
+                     round(2) 
+```
+
+```{r}
+library(tibble)
+```
+
+```{r}
+as.data.frame(daysByNeigh)%>%rownames_to_column()
+```
+
+
+```{r}
+daysByNeigh=as.data.frame(daysByNeigh)%>%rownames_to_column()
+crimesByNeigh=as.data.frame(crimesByNeigh)%>%rownames_to_column()
+```
+
+```{r}
+num_num=merge(daysByNeigh,crimesByNeigh)
+```
+
+```{r}
+base = ggplot(num_num, aes(daysByNeigh,crimesByNeigh)) 
+plot1= base +  geom_point() 
+plot1
+```
+
+```{r}
+library(ggrepel)
+```
+
+```{r}
+base = ggplot(num_num, aes(daysByNeigh,crimesByNeigh,
+                           label=rowname)) 
+plot1= base +  geom_point() 
+plot1 + geom_text_repel()
+```
+
+```{r}
+base = ggplot(num_num, aes(daysByNeigh,crimesByNeigh,label=rowname)) + ggtitle(label ="How Many Years Does it Take to Report a Crime?")
+plot1= base +  geom_point() 
+plot1 + geom_text_repel(aes(label=ifelse(crimesByNeigh>=5,
+                                         num_num$rowname, "")))
+
+
+```
+

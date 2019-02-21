@@ -53,7 +53,7 @@ names(crime)
 
 A quick look will give us:
 ```{r head, eval=FALSE}
-head(crime)
+head(crime) ##gives the first 6 rows of a large matrix, or data frame
 ```
 
 Let's see what kind of data we have:
@@ -86,7 +86,7 @@ library(magrittr)
 (CrimeTotal=table(crime$crimecat,crime$Occurred.DayTime)%>% #create table and then...
         prop.table() %>% #compute proportion and then...
         "*"(100)%>% # multiply by 100 and then...
-        round(2) #...round to to decimals
+        round(2) #...round to two decimals
         )
 ```
 
@@ -118,6 +118,7 @@ However, when using alternative/more specialized plotting features you may need 
 
 ```{r convertToDFgg,eval=FALSE}
 df.T=as.data.frame(CrimeTotal) # table of proportion based on total
+
 # YOU GET:
 head(df.T)
 ```
@@ -197,6 +198,20 @@ bars2 + coord_flip() + theme(axis.text.y = element_text(size=4,angle = 45))
 <span style="color:red"> Exercise 1:<br> Turn the bars into lollipop with the right components.
 </span>
 
+
+```{r}
+base  = ggplot(df.C, aes(x = reorder(Crime, Percent), y = Percent ) ) 
+lollipop1 = base + geom_segment(aes(y = 0,
+                                  x = reorder(Crime,Percent),
+                                  yend = Percent,
+                                  xend = Crime),
+                                  color = "gray50")
+lollipop2=lollipop1+geom_point(color="navyblue")
+lollipop3 = lollipop2+facet_wrap(~ Daytime,nrow = 1)
+lollipop3 + coord_flip() + theme_minimal()
+```
+
+
 Once you see a plot of two bivariate categorical data, you may consider other plots:
 
 ```{r heatDescending, eval=FALSE}
@@ -207,6 +222,8 @@ heat2 = heat1 +scale_fill_gradient(low = "white",
                                    high = "black")
 heat2
 ```
+
+
 
 Some work on the legend:
 
@@ -226,6 +243,17 @@ heat4 + labs(y="Crime")
 <a id='ex2'></a>
 <span style="color:red"> Exercise 2:<br> Change the heatplot to ascending order, where intensity goes from yellow to purple.
 </span>
+
+
+
+
+```{r}
+base  = ggplot(df.C, aes(x = Daytime, y = reorder(Crime, -Percent), fill = Percent))
+heat1 = base +  geom_tile(inherit.aes = TRUE) 
+heat2 = heat1 +scale_fill_gradient(low = "yellow", 
+                                   high = "purple")
+heat2
+```
 _____
 
 [Go to table of contents.](#part1)
@@ -273,7 +301,7 @@ We see no structure appear yet. Let me try different versions while teaching how
 
 
 ```{r parMFROW, eval=FALSE}
-par(mfrow=c(2,2)) # 2 rows, and two columns, by row:
+par(mfrow=c(2,2)) # 2 rows, and two columns, by row: #par sets or adjusts plotting parameters
 
 boxplot(DaysToReport~Precinct,data=crime,subset = DaysToReport>=7,
         main="One week or more")
@@ -288,7 +316,7 @@ boxplot(DaysToReport~Precinct,data=crime,subset = DaysToReport>=365,
         main="One year or more")
 ```
 
-Up to this point, you need to be planing a good _story_. The situation is different for each case, but let's build our story from the crimes that take a year or longer to report.
+Up to this point, you need to be planning a good _story_. The situation is different for each case, but let's build our story from the crimes that take a year or longer to report.
 
 First, let's see how many cases we have per precinct:
 
